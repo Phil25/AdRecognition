@@ -39,6 +39,9 @@ def possible_unknown(val):
 def is_ad(val):
     return 1 if val == "ad." else 0
 
+def avg(l):
+    return sum(l) / len(l)
+
 def get_data(data_path, names_path, drop_unknowns):
     names = build_names(names_path)
     convertes = {
@@ -57,13 +60,19 @@ def get_data(data_path, names_path, drop_unknowns):
 
     return dataframe, dict(zip(names, model.feature_importances_.tolist()))
 
-def main():
+def main(importance_threshold, drop_unknowns):
     data_path = path.join(getcwd(), "data", "ad.data")
     names_path = path.join(getcwd(), "data", "ad.names")
-    dataframe, importances = get_data(data_path, names_path, True)
+    dataframe, importances = get_data(data_path, names_path, drop_unknowns)
 
-    unimportant_features = [k for k, v in importances.items() if v < IMPORTANCE_THRESHOLD]
+    unimportant_features = [k for k, v in importances.items() if v < importance_threshold]
+    important_features = [k for k, v in importances.items() if v >= importance_threshold]
     dataframe.drop(unimportant_features, axis=1, inplace=True)
+
+    print(f"Unkown features {'' if drop_unknowns else 'not '}dropped", flush=True)
+    print(f"Importance threshold: {importance_threshold}, average: {avg(importances.values())}", flush=True)
+    print(f"Dropped {len(unimportant_features)} features, using {len(important_features)}:", flush=True)
+    print(important_features, flush=True)
 
     X = dataframe.iloc[:,:-1] # features
     Y = dataframe.iloc[:,-1:] # class
@@ -83,7 +92,7 @@ def main():
         plot_learning_curve(clf, name, X, Y.values.ravel(), axes=axes[:,i], ylim=(0.7, 1.01), cv=cv, n_jobs=4)
 
     fig.tight_layout()
-    plt.savefig("learning_curves.png")
+    plt.savefig(f"learning_curves-du{drop_unknowns}-it{importance_threshold}.png")
 
 if __name__ == "__main__":
-    main()
+    main(IMPORTANCE_THRESHOLD, False)
