@@ -21,20 +21,33 @@ def build_names(names_path):
 
     return names + ["is_ad"]
 
+def build_unknown_indices(data_path):
+    indices = []
+
+    i = 0
+    with open(data_path, "r") as f:
+        for line in f:
+            if "?" in line:
+                indices.append(i)
+            i += 1
+
+    return indices
+
 def possible_unknown(val):
     return -1 if "?" in val else float(val)
 
 def is_ad(val):
     return 1 if val == "ad." else 0
 
-def get_data(data_path, names_path):
+def get_data(data_path, names_path, drop_unknowns):
     names = build_names(names_path)
     convertes = {
         "height": possible_unknown, "width": possible_unknown, "aratio": possible_unknown,
         "local": possible_unknown, "is_ad": is_ad
     }
 
-    dataframe = read_csv(data_path, names=names, converters=convertes)
+    unknown_indices = build_unknown_indices(data_path) if drop_unknowns else []
+    dataframe = read_csv(data_path, names=names, converters=convertes, skiprows=unknown_indices)
 
     X = dataframe.values[:,0:len(names)-1]
     Y = dataframe.values[:,len(names)-1]
@@ -47,7 +60,7 @@ def get_data(data_path, names_path):
 def main():
     data_path = path.join(getcwd(), "data", "ad.data")
     names_path = path.join(getcwd(), "data", "ad.names")
-    dataframe, importances = get_data(data_path, names_path)
+    dataframe, importances = get_data(data_path, names_path, True)
 
     unimportant_features = [k for k, v in importances.items() if v < IMPORTANCE_THRESHOLD]
     dataframe.drop(unimportant_features, axis=1, inplace=True)
