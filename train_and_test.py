@@ -7,13 +7,12 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.svm import SVC
 from sklearn.model_selection import ShuffleSplit
 import matplotlib.pyplot as plt
-
-IMPORTANCE_THRESHOLD = 0.01
+import argparse
 
 def build_names(names_path):
     names = []
 
-    with open(names_path, "r") as f:
+    with open(names_path, "r", encoding="ISO-8859-1") as f:
         for line in f:
             split = line.split(":")
             if line[0] != "|" and len(split) == 2:
@@ -25,7 +24,7 @@ def build_unknown_indices(data_path):
     indices = []
 
     i = 0
-    with open(data_path, "r") as f:
+    with open(data_path, "r", encoding="ISO-8859-1") as f:
         for line in f:
             if "?" in line:
                 indices.append(i)
@@ -70,6 +69,7 @@ def main(importance_threshold, drop_unknowns):
     dataframe.drop(unimportant_features, axis=1, inplace=True)
 
     print(f"Unkown features {'' if drop_unknowns else 'not '}dropped", flush=True)
+    print(f"Working on {len(dataframe)} records", flush=True)
     print(f"Importance threshold: {importance_threshold}, average: {avg(importances.values())}", flush=True)
     print(f"Dropped {len(unimportant_features)} features, using {len(important_features)}:", flush=True)
     print(important_features, flush=True)
@@ -89,10 +89,16 @@ def main(importance_threshold, drop_unknowns):
 
     for i in range(len(classifiers)):
         clf, name = classifiers[i]
-        plot_learning_curve(clf, name, X, Y.values.ravel(), axes=axes[:,i], ylim=(0.7, 1.01), cv=cv, n_jobs=4)
+        plot_learning_curve(clf, name, X, Y.values.ravel(), axes=axes[:,i], ylim=(0.8, 1.01), cv=cv, n_jobs=4)
 
     fig.tight_layout()
     plt.savefig(f"learning_curves-du{drop_unknowns}-it{importance_threshold}.png")
 
 if __name__ == "__main__":
-    main(IMPORTANCE_THRESHOLD, False)
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-t", "--importance-threshold", type=float, default=0.01)
+    parser.add_argument("-d", "--drop-unknowns", action="store_true", default=False)
+    args = parser.parse_args()
+
+    main(args.importance_threshold, args.drop_unknowns)
