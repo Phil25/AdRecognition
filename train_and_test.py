@@ -65,14 +65,16 @@ def main(importance_threshold, drop_unknowns):
     dataframe, importances = get_data(data_path, names_path, drop_unknowns)
 
     unimportant_features = [k for k, v in importances.items() if v < importance_threshold]
-    important_features = [k for k, v in importances.items() if v >= importance_threshold]
+    important_features = {k: v for k, v in importances.items() if v >= importance_threshold}
     dataframe.drop(unimportant_features, axis=1, inplace=True)
 
     print(f"Unkown features {'' if drop_unknowns else 'not '}dropped", flush=True)
     print(f"Working on {len(dataframe)} records", flush=True)
     print(f"Importance threshold: {importance_threshold}, average: {avg(importances.values())}", flush=True)
     print(f"Dropped {len(unimportant_features)} features, using {len(important_features)}:", flush=True)
-    print(important_features, flush=True)
+
+    for feature, importance in important_features.items():
+        print(f"- {feature}: {importance:.6f}")
 
     X = dataframe.iloc[:,:-1] # features
     Y = dataframe.iloc[:,-1:] # class
